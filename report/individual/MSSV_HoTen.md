@@ -8,43 +8,39 @@
 
 ## 1. Bằng chứng
 
-| Tệp | Có? |
-| --- | --- |
-| [`day01_lab.ipynb`](day01_lab.ipynb) — notebook đã chạy, còn output | ☑ |
-| [`lab1_report.json`](lab1_report.json) — do ô "Báo cáo cuối" sinh ra | ☑ |
-| [`hand_calc.jpg`](hand_calc.jpg) — ảnh tính tay có các bước | ☑ |
+| Tệp                                                                       | Có? |
+| -------------------------------------------------------------------------- | ---- |
+| [`day01_lab.ipynb`](day01_lab.ipynb) — notebook đã chạy, còn output  | ☑   |
+| [`lab1_report.json`](lab1_report.json) — do ô "Báo cáo cuối" sinh ra | ☑   |
+| [`hand_calc.jpg`](hand_calc.jpg) — ảnh tính tay có các bước        | ☑   |
 
 ## 2. Kết quả chính
 
-====================================================================================================
-BẢNG TỔNG HỢP SO SÁNH 4 THẾ HỆ AI
-----------------------------------------------------------------------------------------------------
-Phương pháp                     | F1 (test) | F1 (SUB 40) | p95 (ms/tin) | USD / 1k tin
-----------------------------------------------------------------------------------------------------
-1. BoW + LogReg (tự code)       |   0.903   |    0.919    |    0.070 ms  |    $0.000
-2. BoW + MLP (deep learning)    |   0.944   |    0.889    |    0.325 ms  |    $0.000
-3a. Encoder (MiniLM) + kNN      |   0.905   |    0.950    |   89.316 ms  |    $0.000
-3b. Encoder (MiniLM) + LogReg   |   0.984   |    0.974    |   22.136 ms  |    $0.000
-3c. Encoder (MiniLM) + MLP head |   0.979   |    0.974    |   41.310 ms  |    $0.000
-4a. LLM nhỏ zero-shot           |     —     |    0.909    | 3110.430 ms  |    $0.007
-4b. LLM lớn zero-shot           |     —     |    0.976    | 1214.269 ms  |    $0.065
-4c. LLM nhỏ few-shot            |     —     |    0.930    | 1261.563 ms  |    $0.018
-====================================================================================================
-
 ## 3. Dự đoán và thực tế
 
+| Phương pháp                            | F1 (test) | F1 (SUB 40) | p95 (ms/tin) | USD / 1k tin |
+| :---------------------------------------- | :-------: | :---------: | :----------: | :----------: |
+| **1. BoW + LogReg (tự code)**      |   0.903   |    0.919    |   0.070 ms   |    $0.000    |
+| **2. BoW + MLP (deep learning)**    |   0.944   |    0.889    |   0.325 ms   |    $0.000    |
+| **3a. Encoder (MiniLM) + kNN**      |   0.905   |    0.950    |  89.316 ms  |    $0.000    |
+| **3b. Encoder (MiniLM) + LogReg**   |   0.984   |    0.974    |  22.136 ms  |    $0.000    |
+| **3c. Encoder (MiniLM) + MLP head** |   0.979   |    0.974    |  41.310 ms  |    $0.000    |
+| **4a. LLM nhỏ zero-shot**          |    —    |    0.909    | 3110.430 ms |    $0.007    |
+| **4b. LLM lớn zero-shot**          |    —    |    0.976    | 1214.269 ms |    $0.065    |
+| **4c. LLM nhỏ few-shot**           |    —    |    0.930    | 1261.563 ms |    $0.018    |
 
 1. **`tradeoff` (Biên Pareto và SLA):**
+
    - *Dự đoán:* Nhóm mô hình BoW và Encoder+LogReg sẽ đạt chuẩn SLA 50 ms. BoW+LogReg và Encoder+LogReg sẽ nằm trên đường Pareto.
    - *Thực tế:* Khớp chính xác với dự đoán. Cả hai mô hình đều nằm trên đường biên Pareto, trong đó BoW+LogReg đạt tốc độ cao nhất (p95 ~0.07 ms), còn Encoder+LogReg tối ưu nhất về F1 trong nhóm đạt SLA (F1_SUB = 0.974, p95 ~22.1 ms).
    - *Nguyên nhân lệch (hoặc khớp):* Các mô hình hồi quy tuyến tính gọn nhẹ trên vector đặc trưng chất lượng cao luôn cân bằng tốt nhất giữa tốc độ suy luận và năng lực phân loại, không bị độ trễ ẩn như mạng nhiều tầng hay API.
-
 2. **`dl_curve` (Đường cong huấn luyện MLP):**
+
    - *Dự đoán:* Val loss sẽ giảm nhanh ở vài epoch đầu rồi tăng trở lại do overfitting; F1 chỉ nhỉnh hơn nhẹ hoặc tương đương Logistic Regression vì feature BoW không có ngữ cảnh.
    - *Thực tế:* Điểm val loss đạt cực tiểu rất sớm ở epoch thứ 6 rồi bắt đầu tăng dần, thể hiện rõ hiện tượng overfit; F1 test đạt 0.944 (so với 0.903 của BoW+LogReg), nhưng trên tập SUB thì F1 thậm chí giảm xuống 0.889.
    - *Nguyên nhân lệch:* Bộ dữ liệu nhỏ với feature túi từ rời rạc khiến việc tăng thêm tham số ẩn (128k tham số) chủ yếu dẫn đến ghi nhớ dữ liệu huấn luyện thay vì học được quy luật tổng quát mới.
-
 3. **`llm_models` (Model lớn vs model nhỏ zero-shot):**
+
    - *Dự đoán:* Model lớn có F1 cao hơn một chút (~0.95 vs ~0.90) và đắt hơn 2–5 lần; độ trễ của LLM cao hơn hàng chục lần so với Embedding.
    - *Thực tế:* Model lớn `gpt-6.1-terra` đạt F1 = 0.976 so với `gpt-6-luna` đạt 0.909 (chênh lệch đúng như dự đoán), chi phí đắt hơn gấp 10 lần ($0.065 vs $0.007/1k tin), độ trễ p95 lên tới 1.2–3.1 giây (chậm hơn hàng chục nghìn lần so với BoW).
    - *Nguyên nhân lệch:* Độ trễ thực tế bị khuếch đại do mạng viễn thông và cơ chế sinh token tuần tự qua mạng, chứng minh LLM khó có thể đứng độc lập ở hệ thống thời gian thực cao.
@@ -86,7 +82,9 @@ Phương pháp                     | F1 (test) | F1 (SUB 40) | p95 (ms/tin) | US
   - Đổi lại, hệ thống có khả năng khái quát hóa ngữ nghĩa xuất sắc, triệt tiêu gần như hoàn toàn tình trạng bắt nhầm các tin nhắn thông thường chứa từ khóa nhạy cảm.
 
 ## 7. AI log và điều đã học
+
 ### AI log
+
 - **Phần 4 — Cấu hình:**
   - *Tôi hỏi:* Sửa lỗi `AuthenticationError 401: Incorrect API key provided` khi chuyển sang OpenAI API.
   - *AI trả lời:* Giải thích do phiên Colab vẫn lưu `OPENAI_API_KEY` từ key Gemini cũ; hướng dẫn đọc lại trực tiếp từ Colab Secrets và xóa `OPENAI_BASE_URL`.
@@ -101,4 +99,5 @@ Phương pháp                     | F1 (test) | F1 (SUB 40) | p95 (ms/tin) | US
   - *Tôi sửa/kiểm chứng:* Tự chạy thực tế trên notebook, ghi nhận kết quả và trực tiếp phân tích nguyên nhân từng trường hợp đúng/sai.
 
 ### Điều đã học được
+
 Hôm nay tôi hiểu rằng không phải cứ mô hình nhiều tham số hay phức tạp (MLP, LLM) là sẽ đem lại hiệu quả vượt trội trong môi trường thực tế. Với dữ liệu dạng túi từ (BoW), mạng nơ-ron sâu không cải thiện được nhiều do đặc trưng thiếu ngữ cảnh, trong khi lại rất dễ bị overfit. Một mô hình biểu diễn ngữ nghĩa cô đọng được pre-train tốt (như MiniLM) kết hợp cùng một tầng phân loại tuyến tính đơn giản chính là điểm cân bằng hoàn hảo nhất giữa chất lượng, tốc độ và chi phí triển khai hệ sinh thái AI.
